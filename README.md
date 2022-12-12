@@ -1,2 +1,2 @@
-# bazzite-image
+# Bazzite
 "Bazzite" may one day be an alternative OS for the Steam Deck based on Fedora Kinoite
