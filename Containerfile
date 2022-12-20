@@ -20,6 +20,7 @@ steam-devices \
 llvm-libs \
 pipewire-alsa \
 pipewire-libs \
+libxcrypt-compat \
 latencyflex-vulkan-layer \
 gamescope \
 gamescope-session \
