@@ -13,23 +13,26 @@ rpm-ostree override remove libavutil-free libswscale-free libswresample-free lib
 RUN wget https://copr.fedorainfracloud.org/coprs/kylegospo/bazzite/repo/fedora-$(rpm -E %fedora)/kylegospo-bazzite-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-bazzite.repo && \
 wget https://copr.fedorainfracloud.org/coprs/kylegospo/LatencyFleX/repo/fedora-$(rpm -E %fedora)/kylegospo-LatencyFleX-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-latencyflex.repo
 
+# Remove unneeded packages
+RUN rpm-ostree override remove toolbox
+
 # Install new packages, remove packages Steam likes to conflict with so the versions it's built against install instead.
 RUN rpm-ostree install \
 distrobox \
 steam \
 steam-devices \
-mesa-dri-drivers \
-mesa-filesystem \
-mesa-libGL \
-mesa-libglapi \
-mesa-vulkan-drivers \
+llvm-libs \
+pipewire-alsa \
+pipewire-libs \
+libxcrypt-compat \
 gamescope \
 gamescope-session \
 gamemode \
 latencyflex-vulkan-layer \
 vkBasalt \
 mangohud \
-duperemove
+duperemove \
+kdeconnectd
 
 # Finalize
 RUN sed -i 's/#AutomaticUpdatePolicy.*/AutomaticUpdatePolicy=stage/' /etc/rpm-ostreed.conf && \
