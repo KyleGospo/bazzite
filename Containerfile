@@ -18,6 +18,11 @@ RUN rpm-ostree install \
 distrobox \
 steam \
 steam-devices \
+mesa-dri-drivers \
+mesa-filesystem \
+mesa-libGL \
+mesa-libglapi \
+mesa-vulkan-drivers \
 gamescope \
 gamescope-session \
 gamemode \
