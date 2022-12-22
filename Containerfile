@@ -16,15 +16,11 @@ wget https://copr.fedorainfracloud.org/coprs/kylegospo/LatencyFleX/repo/fedora-$
 # Remove unneeded packages
 RUN rpm-ostree override remove toolbox
 
-# Install new packages, remove packages Steam likes to conflict with so the versions it's built against install instead.
+# Install new packages
 RUN rpm-ostree install \
 distrobox \
 steam \
 steam-devices \
-llvm-libs \
-pipewire-alsa \
-pipewire-libs \
-libxcrypt-compat \
 gamescope \
 gamescope-session \
 gamemode \
