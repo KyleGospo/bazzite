@@ -1,4 +1,6 @@
-FROM quay.io/fedora-ostree-desktops/kinoite:37
+ARG FEDORA_MAJOR_VERSION=37
+
+FROM quay.io/fedora-ostree-desktops/kinoite:${FEDORA_MAJOR_VERSION}
 
 COPY etc /etc
 COPY usr /usr
