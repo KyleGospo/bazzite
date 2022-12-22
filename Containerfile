@@ -30,7 +30,9 @@ latencyflex-vulkan-layer \
 vkBasalt \
 mangohud \
 duperemove \
-kdeconnectd
+kdeconnectd \
+$(rpm -qa --qf "%{NAME} ")
+# The above prints every package installed, this acts similarly to rpm-ostree update when making an OCI image and resolves issues with installing Steam
 
 # Finalize
 RUN sed -i 's/#AutomaticUpdatePolicy.*/AutomaticUpdatePolicy=stage/' /etc/rpm-ostreed.conf && \
