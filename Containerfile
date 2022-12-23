@@ -31,12 +31,16 @@ steam-devices \
 gamescope \
 gamescope-session \
 jupiter-fan-control \
+steamdeck-kde-presets \
 gamemode \
 latencyflex-vulkan-layer \
 vkBasalt \
 mangohud \
 duperemove \
 kdeconnectd \
+btop \
+fish \
+kate \
 $(rpm -qa --qf "%{NAME} ")
 # The above prints every package installed, this acts similarly to rpm-ostree update when making an OCI image and resolves issues with installing Steam
 
