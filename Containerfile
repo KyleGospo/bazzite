@@ -25,6 +25,7 @@ steam \
 steam-devices \
 gamescope \
 gamescope-session \
+jupiter-fan-control \
 gamemode \
 latencyflex-vulkan-layer \
 vkBasalt \
