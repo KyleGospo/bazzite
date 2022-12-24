@@ -95,7 +95,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Sign container image
         run: |
-          cosign sign ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}@${TAGS}
+          cosign sign ${{ steps.registry_case.outputs.lowercase }}/${{ env.IMAGE_NAME }}@${TAGS}
         env:
           TAGS: ${{ steps.push.outputs.digest }}
           COSIGN_PRIVATE_KEY: ${{secrets.SIGNING_SECRET}}
