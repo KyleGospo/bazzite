@@ -85,7 +85,21 @@ jobs:
           password: ${{ env.REGISTRY_PASSWORD }}
           extra-args: |
             --disable-content-trust
-
+      # Sign container
+      - uses: sigstore/cosign-installer@main
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Sign container image
+        run: |
+          cosign sign ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}@${TAGS}
+        env:
+          TAGS: ${{ steps.push.outputs.digest }}
+          COSIGN_PRIVATE_KEY: ${{secrets.SIGNING_SECRET}}
+          COSIGN_EXPERIMENTAL: true
       - name: Echo outputs
         run: |
           echo "${{ toJSON(steps.push.outputs) }}"
