@@ -98,14 +98,16 @@ jobs:
       # Sign container
       - uses: sigstore/cosign-installer@main
 
-      # Only needed when running `cosign sign` using a key
-      - name: Write signing key to disk
+      - name: Write cosign keys to disk
         run: |
           echo "${{ env.COSIGN_PRIVATE_KEY }}" > cosign.key
-          # DEBUG: get character count of key
+          echo "${{ env.COSIGN_PUBLIC_KEY }}" > cosign.pub
+          # DEBUG: get character count of keys
           wc -c cosign.key
+          wc -c cosign.pub
         env:
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
@@ -117,6 +119,14 @@ jobs:
       - name: Sign container image
         run: |
           cosign sign --key cosign.key ${{ steps.registry_case.outputs.lowercase }}/${{ env.IMAGE_NAME }}@${TAGS}
+        env:
+          TAGS: ${{ steps.push.outputs.digest }}
+          COSIGN_EXPERIMENTAL: false
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+
+      - name: Verify signed image
+        run: |
+          cosign verify --key cosign.pub ${{ steps.registry_case.outputs.lowercase }}/${{ env.IMAGE_NAME }}@${TAGS}
         env:
           TAGS: ${{ steps.push.outputs.digest }}
           COSIGN_EXPERIMENTAL: false
