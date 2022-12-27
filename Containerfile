@@ -47,7 +47,7 @@ $(rpm -qa --qf "%{NAME} ")
 
 # Install dock updater, this is done manually as it has proprietary parts and cannot be built in Copr.
 RUN git clone https://github.com/KyleGospo/jupiter-dock-updater-bin.git && \
-mv jupiter-dock-updater-bin/packaged/usr/lib/jupiter-dock-updater /usr/lib/jupiter-dock-updater
+mv -v jupiter-dock-updater-bin/packaged/usr/lib/jupiter-dock-updater /usr/lib/jupiter-dock-updater
 
 # Finalize
 RUN sed -i 's/#AutomaticUpdatePolicy.*/AutomaticUpdatePolicy=stage/' /etc/rpm-ostreed.conf && \
