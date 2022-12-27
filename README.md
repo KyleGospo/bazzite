@@ -43,6 +43,12 @@ Ported SteamOS and ChimeraOS packages used by Bazzite are built on Copr in [this
 |jupiter-hw-support-[btrfs](https://gitlab.com/popsulfr/steamos-btrfs)|![Build Status](https://copr.fedorainfracloud.org/coprs/kylegospo/bazzite/package/jupiter-hw-support-btrfs/status_image/last_build.png?)|
 |steamdeck-kde-presets|![Build Status](https://copr.fedorainfracloud.org/coprs/kylegospo/bazzite/package/steamdeck-kde-presets/status_image/last_build.png?)|
 
+Additionally, the following packages are used from other Copr repos:
+|Package|Status|
+|---|---|
+|[latencyflex-vulkan-layer](https://copr.fedorainfracloud.org/coprs/kylegospo/LatencyFleX/)|![Build Status](https://copr.fedorainfracloud.org/coprs/kylegospo/LatencyFleX/package/latencyflex-vulkan-layer/status_image/last_build.png?)|
+|[python-hid](https://copr.fedorainfracloud.org/coprs/jcrd/python3-hid/)|![Build Status](https://copr.fedorainfracloud.org/coprs/jcrd/python3-hid/package/python-hid/status_image/last_build.png?)|
+
 ## Verification
 
 These images are signed with sisgstore's [cosign](https://docs.sigstore.dev/cosign/overview/). You can verify the signature by downloading the `cosign.pub` key from this repo and running the following command:
