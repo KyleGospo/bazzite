@@ -31,6 +31,17 @@ The `latest` tag will automatically point to the latest build.
 - BTRFS by default, including the SD card
 - Matches SteamOS 1:1 whenever possible
   
+## Copr
+
+Ported SteamOS and ChimeraOS packages used by Bazzite are built on Copr in [this repo](https://copr.fedorainfracloud.org/coprs/kylegospo/bazzite/).
+
+|Package|Status|
+|---|---|
+|gamescope-session|![Build Status](https://copr.fedorainfracloud.org/coprs/kylegospo/bazzite/package/gamescope-session/status_image/last_build.png?)|
+|jupiter-fan-control|![Build Status](https://copr.fedorainfracloud.org/coprs/kylegospo/bazzite/package/jupiter-fan-control/status_image/last_build.png?)|
+|jupiter-hw-support|![Build Status](https://copr.fedorainfracloud.org/coprs/kylegospo/bazzite/package/jupiter-hw-support/status_image/last_build.png?)|
+|steamdeck-kde-presets|![Build Status](https://copr.fedorainfracloud.org/coprs/kylegospo/bazzite/package/steamdeck-kde-presets/status_image/last_build.png?)|
+
 ## Verification
 
 These images are signed with sisgstore's [cosign](https://docs.sigstore.dev/cosign/overview/). You can verify the signature by downloading the `cosign.pub` key from this repo and running the following command:
