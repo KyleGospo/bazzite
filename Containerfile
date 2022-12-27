@@ -18,7 +18,8 @@ rpm-ostree override remove libavutil-free libswscale-free libswresample-free lib
 
 # Add needed Copr repos
 RUN wget https://copr.fedorainfracloud.org/coprs/kylegospo/bazzite/repo/fedora-$(rpm -E %fedora)/kylegospo-bazzite-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-bazzite.repo && \
-wget https://copr.fedorainfracloud.org/coprs/kylegospo/LatencyFleX/repo/fedora-$(rpm -E %fedora)/kylegospo-LatencyFleX-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-latencyflex.repo
+wget https://copr.fedorainfracloud.org/coprs/kylegospo/LatencyFleX/repo/fedora-$(rpm -E %fedora)/kylegospo-LatencyFleX-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-latencyflex.repo && \
+wget https://copr.fedorainfracloud.org/coprs/jcrd/python3-hid/repo/fedora-$(rpm -E %fedora)/jcrd-python3-hid-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_jcrd-python3-hid.repo
 
 # Remove unneeded packages
 RUN rpm-ostree override remove toolbox
