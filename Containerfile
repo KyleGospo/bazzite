@@ -31,6 +31,7 @@ steam-devices \
 gamescope \
 gamescope-session \
 jupiter-fan-control \
+jupiter-hw-support \
 steamdeck-kde-presets \
 gamemode \
 latencyflex-vulkan-layer \
