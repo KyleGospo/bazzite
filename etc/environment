@@ -1,3 +1,2 @@
-STEAM_USE_MANGOAPP=1
 MESA_GLTHREAD=true
 RADV_PERFTEST="rt,nggc,ngg_streamout,sam,nv_ms,ext_ms,gewave32,cswave32,pswave32"
