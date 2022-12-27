@@ -45,6 +45,10 @@ kate \
 $(rpm -qa --qf "%{NAME} ")
 # The above prints every package installed, this acts similarly to rpm-ostree update when making an OCI image and resolves issues with installing Steam
 
+# Install dock updater, this is done manually as it has proprietary parts and cannot be built in Copr.
+RUN git clone https://github.com/KyleGospo/jupiter-dock-updater-bin.git && \
+mv jupiter-dock-updater-bin/packaged/usr/lib/jupiter-dock-updater /usr/lib/jupiter-dock-updater
+
 # Finalize
 RUN sed -i 's/#AutomaticUpdatePolicy.*/AutomaticUpdatePolicy=stage/' /etc/rpm-ostreed.conf && \
     systemctl enable rpm-ostreed-automatic.timer && \
