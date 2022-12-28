@@ -15,7 +15,7 @@ Warning: This is an experimental feature and should not be used in production, t
     
 We build date tags as well, so if you want to rebase to a particular day's release:
   
-    sudo rpm-ostree rebase --experimental ostree-unverified-registry:ghcr.io/kylegospo/bazzite:20221217 
+    sudo rpm-ostree rebase --experimental ostree-unverified-registry:ghcr.io/kylegospo/bazzite:20221227 
 
 The `latest` tag will automatically point to the latest build. 
 
@@ -47,7 +47,7 @@ Additionally, the following packages are used from other Copr repos:
 |Package|Status|
 |---|---|
 |[latencyflex-vulkan-layer](https://copr.fedorainfracloud.org/coprs/kylegospo/LatencyFleX/)|![Build Status](https://copr.fedorainfracloud.org/coprs/kylegospo/LatencyFleX/package/latencyflex-vulkan-layer/status_image/last_build.png?)|
-|[python-hid](https://copr.fedorainfracloud.org/coprs/jcrd/python3-hid/)|![Build Status](https://copr.fedorainfracloud.org/coprs/jcrd/python3-hid/package/python-hid/status_image/last_build.png?)|
+|[python3-hid](https://copr.fedorainfracloud.org/coprs/jcrd/python3-hid/)|![Build Status](https://copr.fedorainfracloud.org/coprs/jcrd/python3-hid/package/python-hid/status_image/last_build.png?)|
 
 ## Verification
 
