@@ -4,6 +4,7 @@ FROM quay.io/fedora-ostree-desktops/kinoite:${FEDORA_MAJOR_VERSION}
 
 COPY etc /etc
 COPY usr /usr
+RUN mkdir -p /var/lib/duperemove
 
 # Enable RPM Fusion and install it properly to avoid local override issues, install mesa-freeworld for proper video decode
 RUN rpm-ostree install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && \
