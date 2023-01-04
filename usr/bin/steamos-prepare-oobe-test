@@ -1,0 +1,75 @@
+#!/bin/bash
+
+set -euo pipefail
+
+## This is a quick hack to put a OOBE-gold-image version of the OS on the other slot and mark it active for next reboot,
+## so we can test the flow of then updating from it to a day-1 update.
+
+# Usage:
+#   steamos-prepare-oobe-test
+#   # Optionally also arm the factory reset machinery to get a 'clean' install into the factory image, for more thorough
+#   # testing
+#   steamos-factory-reset-config
+#   # Reboot into new factory image, which will 'update' back to the latest stable image.
+#   reboot
+
+# The URL to query to determine what OOBE image to grab
+OOBE_IMAGE_VER_URL="https://steamdeck-images.steamos.cloud/steamdeck/latest-oobe-test-image.txt"
+# Where to get it, since we'll ask rauc directly.  Assumes two replacements currently.
+OOBE_IMAGE_URL_PAT="https://steamdeck-images.steamos.cloud/steamdeck/%s/steamdeck-%s-snapshot.raucb"
+
+_log() { printf >&2 "[$1] %s\n" "${*:2}"; }
+log() { _log - "$*"; }
+cmd() { _log + "${*@Q}"; "$@"; }
+die() { _log '!' "Fatal: $*"; exit 1; }
+
+# Elevate
+if [[ $EUID -ne 0 ]]; then
+  log "Elevating to root"
+  cmd exec pkexec --disable-internal-agent "$0" "$@"
+fi
+
+# Args
+arg_clean=
+if [[ $# -eq 1 && $1 = "--clean" ]]; then
+  arg_clean=1
+elif [[ $# -ne 0 ]]; then
+  die "Usage: $(basename -- "$0") [--clean]"
+fi
+
+# Query version
+log "Querying available OOBE test image version"
+ver=$(cmd curl -L "$OOBE_IMAGE_VER_URL" | grep -v '^#')
+
+# Make sure it's sane-looking
+if ! [[ $ver =~ ^[0-9]+\.[0-9]+$ ]]; then
+  die "Failed to query a valid OOBE test image version from \"$OOBE_IMAGE_VER_URL\" (got: \"$ver\")"
+fi
+
+# Format url
+url="$(printf "$OOBE_IMAGE_URL_PAT" "$ver" "$ver")"
+
+log "Target OOBE image: $url"
+
+# We cannot install the same version on both slots. If we are somehow in this OOBE image, refuse.
+osver=$(source /etc/os-release && printf "%s" "$BUILD_ID")
+
+[[ -n $osver ]] || die "Couldn't determine OS version"
+[[ $osver != "$ver" ]] || die "Booted OS is already the configured OOBE test image"
+
+## Do the install
+log "Installing '$url' to other slot"
+
+cmd steamos-atomupd-client -d --update-from-url="$url" || die "Install failed, see above."
+
+if [[ -n $arg_clean ]]; then
+  log "--clean specified, removing network configurations from remote side"
+  cmd steamos-chroot --partset other -- rm -rf /var/lib/overlays/etc/upper/NetworkManager/ /var/lib/iwd/
+fi
+
+log "Other slot has been updated to version $ver and ready to be used as a OOBE image test"
+log
+log "  Run \`reboot\` to boot into the OOBE, which will perform a day one update."
+log
+log "  To abort rebooting into the OOBE and retain the current update, run:"
+log "    sudo steamos-bootconf set-mode reboot"

@@ -1,0 +1,216 @@
+#!/bin/bash
+# -*- mode: sh; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+# vim: et sts=4 sw=4
+
+#  SPDX-License-Identifier: LGPL-2.1+
+#
+#  Copyright © 2020-2021 Collabora Ltd.
+#  Copyright © 2020-2021 Valve Corporation.
+#
+#  This file is part of steamos-customizations.
+#
+#  steamos-customizations is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public License as
+#  published by the Free Software Foundation; either version 2.1 of the License,
+#  or (at your option) any later version.
+
+set -e
+set -o pipefail
+set -u
+
+usage() {
+    cat <<EOF
+${0##*/} [OPTIONS...] [ARG]
+
+Reboot SteamOS.
+
+Options:
+     --next XXXX
+                 Set BootNext to XXXX (Boothex or Label)
+                 to boot on XXXX at next boot
+                 See efibootmgr --bootnext usage
+                 Same as --reboot-to-firmware-entry XXXX
+     --factory-reset
+                 Perform factory reset at shutdown
+     --update
+                 Set mode update to update at next boot
+     --update-other
+                 Set mode update-other to update other at next boot
+     --reboot-other
+                 Set mode reboot-other to boot on other at next boot
+     --reboot-to-firmware-entry ENTRY
+                 Set firmware entry at next boot
+     --reboot-to-bootloader-menu TIMEOUT
+                 Set timeout in sec and enter menu at next boot
+     --reboot-to-bootloader-entry ENTRY
+                 Set bootloader entry at next boot
+     --reboot-to-firmware-setup
+                 Set OS indications to enter firmware setup at next boot
+     --list-firmware-entries
+                 List firmware entries
+     --list-bootloader-entries
+                 List bootloader entries
+EOF
+    "${0##*/steamos-}" --help | sed -n '/^Options:/,//{//d;p}'
+}
+
+prompt() {
+    if [[ ! -t 0 ]]
+    then
+        return 0
+    fi
+
+    while true
+    do
+        echo -n "$* " >&2
+        read -r resp _
+        resp="${resp:-no}"
+
+        case "${resp,,}" in
+        yes) return 0;;
+        n|no)  return 1;;
+        esac
+    done
+}
+
+get_efivar_str() {
+    cat "/sys/firmware/efi/efivars/$1" | dd bs=1 skip=4 status=none | \
+    iconv -t ASCII -f UTF-16LE | tr '\0' '\n'
+}
+
+get_efivar_hex() {
+    local hex
+
+    read -r hex < <(od -An -tx8 -N8 -j4 "/sys/firmware/efi/efivars/$1")
+    echo "0x$hex"
+}
+
+set_efivar_hex() {
+    local file
+    local fmt
+    local hex
+
+    hex="$(printf "%016x" "$2")"
+    fmt="\x07\x00\x00\x00"
+    fmt+="\x${hex:14:2}\x${hex:12:2}\x${hex:10:2}\x${hex:8:2}"
+    fmt+="\x${hex:6:2}\x${hex:4:2}\x${hex:2:2}\x${hex:0:2}"
+
+    file="$1.$$"
+    printf "$fmt" >"$file"
+    trap "rm -f $file" 0
+}
+
+set_efivar_ascii() {
+    local file
+
+    file="$1.$$"
+    touch "$file"
+    trap "rm -f $file" 0
+    printf "\x07\x00\x00\x00" >"$file"
+    iconv -t utf-16le <<<"$2" | tr '\n' '\0' >>"$file"
+
+    cp "$file" "/sys/firmware/efi/efivars/$1"
+    rm -f "$file"
+    trap - 0
+}
+
+opts=()
+while [[ "$#" -ne 0 ]]
+do
+    if [[ "$1" =~ ^(-h|--help)$ ]]
+    then
+        usage
+        exit 0
+    elif [[ "$1" =~ ^--factory-reset$ ]]
+    then
+        if ! prompt "Are you sure to perform factory-reset [no/yes]?"
+        then
+            echo "Abort!" >&2
+            exit 1
+        fi
+
+        steamos-factory-reset-config /esp/efi/steamos/factory-reset
+        /usr/bin/steamos-set-bootmode reboot
+    elif [[ "$1" =~ ^--update$ ]] || [[ "$1" =~ ^--(update|reboot)-other$ ]]
+    then
+        /usr/bin/steamos-set-bootmode ${1:2}
+    elif [[ "$1" =~ ^--next$ ]]
+    then
+        shift
+        if [[ ! "${1:-}" ]]
+        then
+            usage
+            echo "Error: Too few argument" >&2
+            exit 1
+        fi
+
+        if [[ "$1" =~ ^Boot[0-9A-Fa-F]{4,4}$ ]]
+        then
+            next="$1"
+        else
+            mapfile -t entries < <(efibootmgr | sed -n '/^Boot[0-9A-Fa-f]\{4,4\}./p')
+            for entry in "${entries[@]}"
+            do
+                if [[ "$1" == "${entry:10}" ]]
+                then
+                    next="${entry:0:8}"
+                    break
+                fi
+            done
+        fi
+
+        if [[ "${next:-}" ]]
+        then
+            efibootmgr -n "${next:4}"
+        else
+            echo "Warning: $1: No Such BootEntry" >&2
+        fi
+    elif [[ "$1" =~ ^--reboot-to-bootloader-menu$ ]]
+    then
+        shift
+        if [[ ! "${1:-}" ]]
+        then
+            usage
+            echo "Error: Too few argument" >&2
+            exit 1
+        fi
+
+        ascii="$(($1 * 1000000))"
+        set_efivar_ascii "LoaderConfigTimeoutOneShot-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f" "$ascii"
+        unset ascii
+    elif [[ "$1" =~ ^--reboot-to-bootloader-entry$ ]]
+    then
+        shift
+        if [[ ! "${1:-}" ]]
+        then
+            usage
+            echo "Error: Too few argument" >&2
+            exit 1
+        fi
+
+        set_efivar_ascii "LoaderEntryOneShot-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f" "$1"
+    elif [[ "$1" =~ ^--reboot-to-firmware-setup$ ]]
+    then
+        shift
+
+        hex="$(get_efivar_hex "OsIndicationsSupported-8be4df61-93ca-11d2-aa0d-00e098032b8c")"
+        hex="$((hex|1))"
+        set_efivar_hex "OsIndications-8be4df61-93ca-11d2-aa0d-00e098032b8c" "$hex"
+        unset hex
+    elif [[ "$1" =~ ^--list-firmware-entries$ ]]
+    then
+        efibootmgr | sed -n '/^Boot[0-9A-Fa-f]\{4,4\}. /s,\(Boot[0-9A-Fa-f]\{4\,4\}\). \(.*\),\1\n\2,p' \
+                   | sed '/^$/d' \
+                   | sort -u
+        exit 0
+    elif [[ "$1" =~ ^--list-bootloader-entries$ ]]
+    then
+        get_efivar_str "LoaderEntries-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f"
+        exit 0
+    else
+        opts+=("$1")
+    fi
+    shift
+done
+
+exec "${0##*/steamos-}" "${opts[@]}"

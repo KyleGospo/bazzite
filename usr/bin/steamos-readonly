@@ -1,0 +1,145 @@
+#!/bin/bash
+# -*- mode: sh; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+# vim: et sts=4 sw=4
+
+#  SPDX-License-Identifier: LGPL-2.1+
+#
+#  Copyright © 2020-2021 Collabora Ltd.
+#  Copyright © 2020-2021 Valve Corporation.
+#
+#  This file is part of steamos-customizations.
+#
+#  steamos-customizations is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public License as
+#  published by the Free Software Foundation; either version 2.1 of the License,
+#  or (at your option) any later version.
+
+set -euo pipefail
+
+declare -r ROOTDEV=/dev/disk/by-partsets/self/rootfs
+
+# default and future guess
+fstype=btrfs
+
+usage() {
+    cat <<EOF
+Usage: ${0##*/} enable|disable|status
+
+Enable or disable read-only on the current running SteamOS.
+EOF
+}
+
+# mark root partition writable
+read_write_extfs() {
+    tune2fs -O ^read-only "$ROOTDEV"
+    mount -o remount,rw /
+}
+read_write_btrfs() {
+    mount -o remount,rw /
+    btrfs property set / ro false
+}
+read_write() {
+    if ! status >/dev/null; then
+        echo "Warning: The rootfs is already read-write!" >&2
+        echo "         Nothing is performed." >&2
+        return
+    fi
+    read_write_$fstype
+}
+
+#
+# mark root partition read-only
+read_only_btrfs() {
+    btrfs property set / ro true
+}
+read_only_extfs() {
+    mount -o remount,ro /
+    tune2fs -O read-only "$ROOTDEV"
+}
+read_only() {
+    if status >/dev/null; then
+        echo "Warning: The rootfs is already read-only!" >&2
+        echo "         Nothing is performed." >&2
+        return
+    fi
+    sync /
+    read_only_$fstype
+}
+
+status_extfs() {
+    if tune2fs -l "$ROOTDEV" | grep -q '^Filesystem features: .*read-only.*$'
+    then
+        echo "enabled"
+        return
+    else
+        echo "disabled"
+        return 1
+    fi
+}
+status_btrfs() {
+    prop_val=$(btrfs property get / ro)
+    if [[ $prop_val = "ro=true" ]]
+    then
+        echo "enabled"
+    else
+        echo "disabled"
+        return 1
+    fi
+}
+status() {
+    status_$fstype
+}
+
+
+toggle() {
+    if status >/dev/null
+    then
+        read_write
+    else
+        read_only
+    fi
+    status
+}
+
+# determine file system type and set the fstype variable used above
+get_fstype() {
+    declare -r FSTYPE=$(findmnt -fn --output FSTYPE /)
+    case "$FSTYPE" in
+    ext4)
+        fstype=extfs
+        ;;
+    btrfs)
+        fstype=btrfs
+        ;;
+    *)
+        echo "Unrecognized root filesystem type $FSTYPE"
+        exit 1
+    esac
+}
+
+# Ideally status will be root-free, alas tune2fs (ext4 rootfs)
+# does not like that.
+if [[ "$(id -u)" -ne 0 ]]; then
+    echo "$(basename $0) needs to be run as root"
+    exit 1
+fi
+
+get_fstype
+
+case "${1:-}" in
+    disable)
+        read_write
+        ;;
+    enable)
+        read_only
+        ;;
+    toggle)
+        toggle
+        ;;
+    status)
+        status
+        ;;
+    *)
+        usage
+        exit 1
+esac

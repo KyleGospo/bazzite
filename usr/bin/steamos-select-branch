@@ -1,0 +1,42 @@
+#!/bin/bash
+set -e
+
+BRANCH_PATH="/var/lib/steamos-branch"
+
+if [[ "$#" = 1 ]]; then
+  case "$1" in
+    "-c")
+      branch=$(cat "$BRANCH_PATH" 2> /dev/null || echo "rel")
+      case "$branch" in
+        "rel" | "rc" | "beta" | "bc" | "main" | "staging")
+          echo "$branch"
+          exit 0
+          ;;
+        *)
+          echo "unknown branch name in $BRANCH_PATH: $branch" 1>&2
+          exit 1
+          ;;
+      esac
+      ;;
+    "-l")
+      echo rel
+      echo rc
+      echo beta
+      echo bc
+      echo main
+      exit 0
+      ;;
+    "rel" | "rc" | "beta" | "bc" | "main")
+      echo "$1" > "$BRANCH_PATH"
+      exit 0
+      ;;
+    "staging")
+      echo "The staging branch has a high risk of breaking."
+      echo "Do NOT use it unless you know what you are doing."
+      echo "$1" > "$BRANCH_PATH"
+      exit 0
+      ;;
+  esac
+fi
+
+echo "Usage: steamos-select-branch <-c|-l|rel|rc|beta|bc|main>" 1>&2

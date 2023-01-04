@@ -1,0 +1,144 @@
+#!/bin/bash
+# -*- mode: sh; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+# vim: et sts=4 sw=4
+
+#  SPDX-License-Identifier: LGPL-2.1+
+#
+#  Copyright © 2020-2021 Collabora Ltd.
+#  Copyright © 2020-2021 Valve Corporation.
+#
+#  This file is part of steamos-customizations.
+#
+#  steamos-customizations is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public License as
+#  published by the Free Software Foundation; either version 2.1 of the License,
+#  or (at your option) any later version.
+
+set -euo pipefail
+
+declare -r ROOTDEV=/dev/disk/by-partsets/self/rootfs
+declare -r VERITYDEV=/dev/disk/by-partsets/self/verity
+declare -r HASHFILE=/efi/SteamOS/roothash
+
+usage() {
+    cat <<EOF
+Usage: ${0##*/} enable|disable|status|verify
+
+Enable or disable the block level verification on the current running SteamOS.
+EOF
+}
+
+mapper_root_mounted() {
+    grep -q '^/dev/mapper/root / ' /proc/mounts
+}
+
+read_write() {
+    steamos-readonly disable
+
+    if mapper_root_mounted
+    then
+        echo "Warning: The rootfs is still read-only!" >&2
+        echo "         Reboot to complete setup." >&2
+        return
+    fi
+    rm -f "$HASHFILE"
+    sync /
+}
+
+read_only() {
+    if mapper_root_mounted
+    then
+        echo "Warning: The rootfs is already read-only!" >&2
+        echo "         Nothing is performed." >&2
+        return
+    fi
+
+    local block_size=$(blkid -o value -s BLOCK_SIZE "$ROOTDEV")
+
+    steamos-readonly enable
+
+    veritysetup format --data-block-size "$block_size" --hash-block-size "$block_size" \
+        "$ROOTDEV" "$VERITYDEV" | \
+        tee /dev/stderr | \
+        sed -n 's,^Root hash:[[:blank:]]\+\([[:xdigit:]]\{64\}\)$,\1,p' > "$HASHFILE"
+
+    echo "Reboot to complete setup." >&2
+}
+
+status() {
+    local filesystem_is_readonly
+    local device_is_readonly
+    local roothash
+
+    if mapper_root_mounted
+    then
+        device_is_readonly=yes
+    fi
+
+    if steamos-readonly status >/dev/null
+    then
+        filesystem_is_readonly=yes
+    fi
+
+    if [[ -e "$HASHFILE" ]]
+    then
+        roothash="$(cat $HASHFILE)"
+    fi
+
+    if [[ "${roothash:-}" ]] && [[ "${device_is_readonly:-}" ]] && [[ "${filesystem_is_readonly:-}" ]]
+    then
+        echo "enabled"
+        return
+    fi
+
+    # XXX: this seems off
+    if [[ ! "${roothash:-}" ]] && [[ ! "${filesystem_is_readonly:-}" ]]
+    then
+        echo "disabled"
+        return 1
+    elif [[ ! "${roothash:-}" ]] && [[ ! "${filesystem_is_readonly:-}" ]]
+    then
+        echo "disabled${device_is_readonly:+ (after reboot)}"
+        return 1
+    fi
+
+    echo "unknown"
+    echo "- device-is-read-only: ${device_is_readonly:-no}"
+    echo "- filesystem-is-read-only: ${filesystem_is_readonly:-no}"
+    echo "- roothash: ${roothash:-none}"
+    return 1
+}
+
+verify() {
+    if [[ ! -e "$HASHFILE" ]]
+    then
+        return 1
+    fi
+
+    veritysetup verify "$ROOTDEV" "$VERITYDEV" "$(cat $HASHFILE)"
+}
+
+# Ideally status will be root-free, alas steamos-readonly status
+# does not like that.
+if [[ "$(id -u)" -ne 0 ]]; then
+    echo "$(basename $0) needs to be run as root"
+    exit 1
+fi
+
+case "${1:-}" in
+    disable)
+        read_write
+        ;;
+    enable)
+        read_only
+        ;;
+    status)
+        status
+        ;;
+    verify)
+        verify
+        ;;
+    *)
+        usage
+        exit 1
+esac
