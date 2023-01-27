@@ -48,7 +48,7 @@ mv -v jupiter-dock-updater-bin/packaged/usr/lib/jupiter-dock-updater /usr/lib/ju
 RUN rpm-ostree override remove toolbox
 
 # Install mesa-freeworld for proper video decode
-RUN rpm-ostree override remove mesa-va-drivers --install=mesa-va-drivers-freeworld --install=mesa-vdpau-drivers-freeworld && \
+RUN rpm-ostree override remove mesa-va-drivers --install=mesa-va-drivers-freeworld.x86_64 --install=mesa-va-drivers-freeworld.i686 --install=mesa-vdpau-drivers-freeworld && \
 rpm-ostree override remove libavutil-free libswscale-free libswresample-free libavformat-free libavcodec-free libavfilter-free libpostproc-free --install=ffmpeg-libs --install=ffmpeg --install=libavcodec-freeworld
 
 # Finalize
