@@ -1,6 +1,6 @@
-ARG FEDORA_MAJOR_VERSION=37
+ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION:-37}"
 
-FROM quay.io/fedora-ostree-desktops/kinoite:${FEDORA_MAJOR_VERSION}
+FROM ghcr.io/ublue-os/kinoite-nvidia:latest
 
 COPY etc /etc
 COPY usr /usr
@@ -9,14 +9,13 @@ ln -s /usr/bin/steamos-logger /usr/bin/steamos-info && \
 ln -s /usr/bin/steamos-logger /usr/bin/steamos-notice && \
 ln -s /usr/bin/steamos-logger /usr/bin/steamos-warning
 
-# Enable RPM Fusion and install it properly to avoid local override issues
-RUN rpm-ostree install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && \
-rpm-ostree install rpmfusion-nonfree-release rpmfusion-free-release --uninstall=rpmfusion-free-release-$(rpm -E %fedora)-1.noarch --uninstall=rpmfusion-nonfree-release-$(rpm -E %fedora)-1.noarch
+# Re-enable RPMFusion Repos
+RUN sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/rpmfusion-nonfree{,-updates}.repo && \
+sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/rpmfusion-free{,-updates}.repo
 
 # Add needed Copr repos
 RUN wget https://copr.fedorainfracloud.org/coprs/kylegospo/bazzite/repo/fedora-$(rpm -E %fedora)/kylegospo-bazzite-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-bazzite.repo && \
-wget https://copr.fedorainfracloud.org/coprs/kylegospo/LatencyFleX/repo/fedora-$(rpm -E %fedora)/kylegospo-LatencyFleX-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-latencyflex.repo && \
-wget https://copr.fedorainfracloud.org/coprs/jcrd/python3-hid/repo/fedora-$(rpm -E %fedora)/jcrd-python3-hid-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_jcrd-python3-hid.repo
+wget https://copr.fedorainfracloud.org/coprs/kylegospo/LatencyFleX/repo/fedora-$(rpm -E %fedora)/kylegospo-LatencyFleX-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-latencyflex.repo
 
 # Install new packages
 RUN rpm-ostree install \
@@ -36,8 +35,8 @@ duperemove \
 kdeconnectd \
 btop \
 fish \
-kate \
-$(rpm -qa --qf "%{NAME} ")
+kate
+# $(rpm -qa --qf "%{NAME} ")
 # The above prints every package installed, this acts similarly to rpm-ostree update when making an OCI image and resolves issues with installing Steam
 
 # Install dock updater, this is done manually as it has proprietary parts and cannot be built in Copr.
@@ -64,10 +63,17 @@ libpostproc-free \
 --install=ffmpeg \
 --install=libavcodec-freeworld
 
-# Finalize
+# Cleanup & Finalize
 RUN sed -i 's/#AutomaticUpdatePolicy.*/AutomaticUpdatePolicy=stage/' /etc/rpm-ostreed.conf && \
     sed -i 's/#DefaultTimeoutStopSec.*/DefaultTimeoutStopSec=15s/' /etc/systemd/user.conf && \
     sed -i 's/#DefaultTimeoutStopSec.*/DefaultTimeoutStopSec=15s/' /etc/systemd/system.conf && \
     systemctl enable rpm-ostreed-automatic.timer && \
+    sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/rpmfusion-nonfree{,-updates}.repo && \
+    sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/rpmfusion-free{,-updates}.repo && \
+    sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_kylegospo-bazzite.repo && \
+    sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_kylegospo-latencyflex.repo && \
     rpm-ostree cleanup -m && \
+    rm -rf \
+    /tmp/* \
+    /var/* && \
     ostree container commit
