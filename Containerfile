@@ -32,8 +32,8 @@ RUN rpm-ostree install \
     kdeconnectd \
     btop \
     fish \
-    kate
-    # $(rpm -qa --qf "%{NAME} ")
+    kate \
+    $(rpm -qa --qf "%{NAME} ")
     # The above prints every package installed, this acts similarly to rpm-ostree update when making an OCI image and resolves issues with installing Steam
 
 # Install dock updater, this is done manually as it has proprietary parts and cannot be built in Copr.
