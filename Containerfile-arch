@@ -9,8 +9,16 @@ RUN sed -i 's/#Color/Color/g' /etc/pacman.conf && \
         wget \
         base-devel \
         git \
+        pipewire \
+        pipewire-pulse \
+        lib32-pipewire \
+        lib32-libpulse \
+        wine \
         steam \
         lutris \
+        nvidia \
+        libva-mesa-driver \
+        intel-media-driver \
         --noconfirm
 
 # Add yay and install AUR packages
@@ -33,20 +41,7 @@ RUN git config --global protocol.file.allow always && \
         aur/mangohud \
         aur/lib32-mangohud \
         aur/latencyflex-git \
-        aur/latencyflex-wine-git \
         --noconfirm
-
-# Nvidia Drivers
-RUN git clone https://github.com/Frogging-Family/nvidia-all.git && \
-    cd nvidia-all && \
-    sed -i 's/_driver_branch=""/_driver_branch="regular"/g' customization.cfg && \
-    cat PKGBUILD | grep -A 1 "\"\$CONDITION\" = \"2\"" | grep "_driver_version" | head -1 | cut -d '=' -f 2 | cut -d "'" -f 1 > driver.ver && \
-    sed -i 's,_driver_version="",_driver_version=\"'"$(cat driver.ver)"'\",g' customization.cfg && \
-    sed -i 's/_open_source_modules=""/_open_source_modules="false"/g' customization.cfg && \
-    sed -i 's/_dkms=""/_dkms="false"/g' customization.cfg && \
-    makepkg -si --noconfirm && \
-    cd .. && \
-    rm -drf nvidia-all
 
 # Cleanup
 USER root

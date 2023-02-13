@@ -23,9 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        major_version: [37]
         include:
-          - major_version: 37
             is_latest: true
             is_stable: true
     steps: 
@@ -45,7 +43,6 @@ jobs:
           else
             # The following is run when the timer is triggered or a merge/push to main
             echo "date=$(date +%Y%m%d)" >> $GITHUB_OUTPUT
-            alias_tags+=("${{ matrix.major_version }}")
             if [[ "${{ matrix.is_latest }}" == "true" ]]; then
               alias_tags+=("latest")
             fi
