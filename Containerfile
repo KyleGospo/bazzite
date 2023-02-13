@@ -31,7 +31,8 @@ RUN rpm-ostree install \
     btop \
     fish \
     kate \
-    openrgb-udev-rules
+    openrgb-udev-rules \
+    $(rpm -qa --qf "%{NAME} ")
 
 # Install dock updater, this is done manually as it has proprietary parts and cannot be built in Copr.
 RUN git clone https://github.com/KyleGospo/jupiter-dock-updater-bin.git && \
