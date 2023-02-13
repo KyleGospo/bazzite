@@ -1,6 +1,3 @@
-ARG IMAGE_NAME="${IMAGE_NAME:-''}"
-ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION:-37}"
-
 FROM ghcr.io/ublue-os/kinoite-nvidia:latest
 
 COPY etc /etc
