@@ -119,15 +119,14 @@ jobs:
 
       - name: Sign container image
         run: |
-          cosign sign --key cosign.key -a git_sha=${{ github.sha }} -a git_tag=${{ github.ref }} ${{ steps.registry_case.outputs.lowercase }}/${{ env.IMAGE_NAME }}@${TAGS}
+          cosign sign --key cosign.key ${{ steps.registry_case.outputs.lowercase }}/${{ steps.build_image.outputs.image }}@${TAGS}
         env:
           TAGS: ${{ steps.push.outputs.digest }}
           COSIGN_EXPERIMENTAL: false
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
 
       - name: Verify signed image
         run: |
-          cosign verify --key cosign.pub ${{ steps.registry_case.outputs.lowercase }}/${{ env.IMAGE_NAME }}@${TAGS}
+          cosign verify --key cosign.pub ${{ steps.registry_case.outputs.lowercase }}/${{ steps.build_image.outputs.image }}@${TAGS}
         env:
           TAGS: ${{ steps.push.outputs.digest }}
           COSIGN_EXPERIMENTAL: false
