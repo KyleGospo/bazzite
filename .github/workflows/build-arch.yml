@@ -24,7 +24,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-            is_latest: true
+          - is_latest: true
             is_stable: true
     steps: 
       # Checkout push-to-registry action GitHub repository
